@@ -4,8 +4,12 @@ C_ARCH_FILES := $(wildcard arch/$(ARCH)/*/*.c)
 C_FILES      := $(wildcard */*.c)
 ASM_FILES    := $(wildcard arch/$(ARCH)/*/*.asm)
 
+C_FILES += fb/Flanterm/src/flanterm.c fb/Flanterm/src/flanterm_backends/fb.c # Couldn't be assed to change the wildcards.
+
 OBJ         := $(C_ARCH_FILES:.c=.o) $(C_FILES:.c=.o) $(ASM_FILES:.asm=.o) $(S_FILES:.S=.o)
 HEADER_DEPS := $(C_ARCH_FILES:.c=.d) $(C_FILES:.c=.d) $(S_FILES:.S=.d)
+
+GIT_HASH := $(shell git rev-parse HEAD 2>/dev/null | cut -c 1-8 || echo unknown)
 
 ifeq ($(ARCH),x86_64)
     CC     := clang
@@ -19,6 +23,8 @@ ifeq ($(ARCH),x86_64)
         -I arch/$(ARCH)/include/ \
         -I ../Limine/limine-protocol/include/
 
+	CFLAGS += -DGIT_VERSION=\"$(GIT_HASH)\"
+
     INTERNAL_CFLAGS := \
         -target $(TARGET) \
         -std=gnu11 \
@@ -26,6 +32,7 @@ ifeq ($(ARCH),x86_64)
         -fno-stack-protector \
         -fno-pie \
         -masm=intel \
+        -mcmodel=kernel \
         -mno-80387 \
         -mno-mmx \
         -mno-3dnow \

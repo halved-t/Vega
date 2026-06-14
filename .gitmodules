@@ -1,3 +1,6 @@
 [submodule "Limine"]
 	path = Limine
 	url = https://github.com/Limine-Bootloader/Limine.git
+[submodule "kernel/fb/Flanterm"]
+	path = kernel/fb/Flanterm
+	url = https://github.com/Mintsuki/Flanterm

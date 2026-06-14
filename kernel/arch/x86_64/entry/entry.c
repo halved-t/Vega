@@ -18,6 +18,9 @@
 #include <stdbool.h>
 #include <limine.h>
 
+#include <fb/fb.h>
+#include <debug/debug.h>
+
 __attribute__((used, section(".limine_requests")))
 static volatile uint64_t limine_base_revision[] = LIMINE_BASE_REVISION(6);
 
@@ -46,15 +49,27 @@ void arch_entry(void) {
     if (framebuffer_request.response == NULL || framebuffer_request.response->framebuffer_count < 1) hcf();
 
     struct limine_framebuffer *framebuffer = framebuffer_request.response->framebuffers[0];
+    struct framebuffer framebuf = {
+        .address = framebuffer->address,
+        .width = framebuffer->width,
+        .height = framebuffer->height,
+        .pitch = framebuffer->pitch,
+        .bpp = framebuffer->bpp,
+        .memory_model = framebuffer->memory_model,
+        .red_mask_size = framebuffer->red_mask_size,
+        .red_mask_shift = framebuffer->red_mask_shift,
+        .green_mask_size = framebuffer->green_mask_size,
+        .green_mask_shift = framebuffer->green_mask_shift,
+        .blue_mask_size = framebuffer->blue_mask_size,
+        .blue_mask_shift = framebuffer->blue_mask_shift
+    };
 
-    volatile uint32_t *fb_ptr = framebuffer->address;
-    for (size_t y = 0; y < framebuffer->height; y++) {
-        for (size_t x = 0; x < framebuffer->width; x++) {
-            uint32_t nX = x * 255 / framebuffer->width;
-            uint32_t nY = y * 255 / framebuffer->height;
-            fb_ptr[y * (framebuffer->pitch / 4) + x] = (nY << 8) | nX;
-        }
-    }
+    serial_init();
+    framebuffer_init(&framebuf);
+    framebuffer_clear();
+
+    kprintf("Hello, Vega build %s!\n", GIT_VERSION);
+    kprintf("\nKane Parsons is officially the youngest director ever to have a #1 film at the domestic box office in its opening weekend.\n\n%s", "He is only 20 years old.");
 
     hcf();
 }
