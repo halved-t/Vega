@@ -65,6 +65,7 @@ void arch_entry(void) {
     };
 
     serial_init();
+    serial_puts("\n\n\n"); // Stupid hack to get out of the EDK2 messages' way.
     framebuffer_init(&framebuf);
     framebuffer_clear();
 
