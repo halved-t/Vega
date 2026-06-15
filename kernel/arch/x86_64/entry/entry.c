@@ -25,6 +25,7 @@
 #include <sys/isr.h>
 #include <mm/mm.h>
 #include <mm/pmm.h>
+#include <mm/slab.h>
 
 __attribute__((used, section(".limine_requests")))
 static volatile uint64_t limine_base_revision[] = LIMINE_BASE_REVISION(6);
@@ -94,6 +95,7 @@ void arch_entry(void) {
     struct limine_memmap_entry **entries = memmap_request.response->entries;
 	uint64_t entry_count = memmap_request.response->entry_count;
     pmm_init(entries, entry_count);
+    slab_init();
 
     framebuffer_init(&framebuf);
     framebuffer_clear();
