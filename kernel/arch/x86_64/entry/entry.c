@@ -23,6 +23,8 @@
 #include <sys/gdt.h>
 #include <sys/idt.h>
 #include <sys/isr.h>
+#include <mm/mm.h>
+#include <mm/pmm.h>
 
 __attribute__((used, section(".limine_requests")))
 static volatile uint64_t limine_base_revision[] = LIMINE_BASE_REVISION(6);
@@ -31,6 +33,18 @@ static volatile uint64_t limine_base_revision[] = LIMINE_BASE_REVISION(6);
 __attribute__((used, section(".limine_requests")))
 static volatile struct limine_framebuffer_request framebuffer_request = {
     .id = LIMINE_FRAMEBUFFER_REQUEST_ID,
+    .revision = 0
+};
+
+__attribute__((used, section(".limine_requests")))
+static volatile struct limine_hhdm_request hhdm_request = {
+    .id = LIMINE_HHDM_REQUEST_ID,
+    .revision = 0
+};
+
+__attribute__((used, section(".limine_requests")))
+static volatile struct limine_memmap_request memmap_request = {
+    .id = LIMINE_MEMMAP_REQUEST_ID,
     .revision = 0
 };
 
@@ -50,6 +64,9 @@ static void hcf(void) {
 void arch_entry(void) {
     if (LIMINE_BASE_REVISION_SUPPORTED(limine_base_revision) == false) hcf();
     if (framebuffer_request.response == NULL || framebuffer_request.response->framebuffer_count < 1) hcf();
+    if (hhdm_request.response == NULL) hcf();
+    MEM_OFFSET = hhdm_request.response->offset;
+
 
     struct limine_framebuffer *framebuffer = framebuffer_request.response->framebuffers[0];
     struct framebuffer framebuf = {
@@ -74,10 +91,16 @@ void arch_entry(void) {
     idt_init();
     isr_init();
 
+    struct limine_memmap_entry **entries = memmap_request.response->entries;
+	uint64_t entry_count = memmap_request.response->entry_count;
+    pmm_init(entries, entry_count);
+
     framebuffer_init(&framebuf);
     framebuffer_clear();
 
     kprintf("Hello, Vega build %s!\n", GIT_VERSION);
+
+    kprintf("%zu free pages / %zu total (%zu MB free)\n", pmm_free_pages(), pmm_total_pages(), pmm_free_pages() * PAGE_SIZE / 1024 / 1024);
 
     hcf();
 }
