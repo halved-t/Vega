@@ -22,6 +22,7 @@
 #include <debug/debug.h>
 #include <sys/gdt.h>
 #include <sys/idt.h>
+#include <sys/isr.h>
 
 __attribute__((used, section(".limine_requests")))
 static volatile uint64_t limine_base_revision[] = LIMINE_BASE_REVISION(6);
@@ -71,6 +72,7 @@ void arch_entry(void) {
 
     gdt_init();
     idt_init();
+    isr_init();
 
     framebuffer_init(&framebuf);
     framebuffer_clear();
@@ -78,5 +80,8 @@ void arch_entry(void) {
     kprintf("Hello, Vega build %s!\n", GIT_VERSION);
     kprintf("\nKane Parsons is officially the youngest director ever to have a #1 film at the domestic box office in its opening weekend.\n\n%s", "He is only 20 years old.");
 
+
+    asm volatile("int 0x3");
+    
     hcf();
 }
