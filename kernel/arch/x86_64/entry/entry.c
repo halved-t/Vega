@@ -78,10 +78,6 @@ void arch_entry(void) {
     framebuffer_clear();
 
     kprintf("Hello, Vega build %s!\n", GIT_VERSION);
-    kprintf("\nKane Parsons is officially the youngest director ever to have a #1 film at the domestic box office in its opening weekend.\n\n%s", "He is only 20 years old.");
 
-
-    asm volatile("int 0x3");
-    
     hcf();
 }
