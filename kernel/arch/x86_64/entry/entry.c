@@ -20,6 +20,7 @@
 
 #include <fb/fb.h>
 #include <debug/debug.h>
+#include <sys/gdt.h>
 
 __attribute__((used, section(".limine_requests")))
 static volatile uint64_t limine_base_revision[] = LIMINE_BASE_REVISION(6);
@@ -66,6 +67,9 @@ void arch_entry(void) {
 
     serial_init();
     serial_puts("\n\n\n"); // Stupid hack to get out of the EDK2 messages' way.
+
+    gdt_init();
+
     framebuffer_init(&framebuf);
     framebuffer_clear();
 
