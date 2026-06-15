@@ -1,6 +1,7 @@
 .PHONY: all kernel run clean
 
 CORES ?= 1
+LIMINE ?= 0
 DISK  := disk.hdd
 
 all: $(DISK)
@@ -11,10 +12,10 @@ kernel/Vega.elf:
 kernel: kernel/Vega.elf
 .PHONY: kernel
 
-Limine/GNUMakefile:
+Limine/GNUmakefile:
 	cd Limine && ./bootstrap && ./configure --enable-uefi-x86-64
 
-Limine/bin/BOOTX64.EFI: Limine/GNUMakefile
+Limine/bin/BOOTX64.EFI: Limine/GNUmakefile
 	$(MAKE) -C Limine
 
 $(DISK): kernel/Vega.elf Limine/bin/BOOTX64.EFI limine.conf
@@ -39,5 +40,7 @@ run: $(DISK)
 
 clean:
 	$(MAKE) -C kernel clean
+ifeq ($(LIMINE),1)
 	$(MAKE) -C Limine clean
+endif
 	rm -f $(DISK)
