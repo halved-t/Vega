@@ -32,9 +32,10 @@
 #include <mm/mm.h>
 #include <klibc/string.h>
 #include <klibc/misc.h>
+#include <sync/spinlock.h>
 
 struct slab {
-    // spinlock_t lock;
+    spinlock_t lock;
     void **first_free;
     size_t ent_size;
 };
@@ -61,7 +62,7 @@ static inline struct slab *slab_for(size_t size) {
 }
 
 static void create_slab(struct slab *slab, size_t ent_size) {
-    // spinlock_acquire(&slab->lock);
+    slab->lock = (spinlock_t)SPINLOCK_INIT;
     slab->first_free = (void **)((uint64_t)pmm_alloc(1) + MEM_OFFSET);
     slab->ent_size = ent_size;
 
@@ -80,11 +81,10 @@ static void create_slab(struct slab *slab, size_t ent_size) {
         arr[i * fact] = &arr[(i + 1) * fact];
     }
     arr[max * fact] = NULL;
-    // spinlock_release(&slab->lock);
 }
 
 static void *alloc_from_slab(struct slab *slab) {
-    // spinlock_acquire(&slab->lock);
+    spinlock_acquire(&slab->lock);
 
     if (slab->first_free == NULL) {
         create_slab(slab, slab->ent_size);
@@ -94,12 +94,12 @@ static void *alloc_from_slab(struct slab *slab) {
     slab->first_free = *old_free;
     memset(old_free, 0, slab->ent_size);
 
-    // spinlock_release(&slab->lock);
+    spinlock_release(&slab->lock);
     return old_free;
 }
 
 static void free_in_slab(struct slab *slab, void *addr) {
-    // spinlock_acquire(&slab->lock);
+    spinlock_acquire(&slab->lock);
 
     if (addr == NULL) {
         goto cleanup;
@@ -110,8 +110,7 @@ static void free_in_slab(struct slab *slab, void *addr) {
     slab->first_free = new_head;
 
 cleanup:
-    // spinlock_release(&slab->lock);
-    (void)slab;
+    spinlock_release(&slab->lock);
 }
 
 void slab_init(void) {

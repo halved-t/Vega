@@ -19,6 +19,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <stdbool.h>
+#include <sync/spinlock.h>
 
 #define VMM_PRESENT (1ull << 0)
 #define VMM_WRITABLE (1ull << 1)
@@ -37,6 +38,7 @@
 #define INVALID_PHYS (~0ull)
 
 struct pagemap {
+    spinlock_t lock;
     uint64_t *pml4;
 };
 

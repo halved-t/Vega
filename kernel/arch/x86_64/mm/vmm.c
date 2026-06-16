@@ -82,23 +82,32 @@ uint64_t vmm_virt_to_phys(struct pagemap *pagemap, uint64_t virt) {
 }
 
 void vmm_map(struct pagemap *pagemap, uint64_t virt, uint64_t phys, uint64_t flags) {
+    spinlock_acquire(&pagemap->lock);
     uint64_t *pte = vmm_virt_to_pte(pagemap, virt, true);
-    if (!pte) return;
-    *pte = phys | flags;
+    if (pte) *pte = phys | flags;
+    spinlock_release(&pagemap->lock);
 }
 
 void vmm_unmap(struct pagemap *pagemap, uint64_t virt) {
+    spinlock_acquire(&pagemap->lock);
     uint64_t *pte = vmm_virt_to_pte(pagemap, virt, false);
-    if (!pte) return;
-    *pte = 0;
-    asm volatile("invlpg [%0]" :: "r"(virt) : "memory");
+    if (pte) {
+        *pte = 0;
+        asm volatile("invlpg [%0]" :: "r"(virt) : "memory");
+    }
+    spinlock_release(&pagemap->lock);
 }
 
 bool vmm_remap(struct pagemap *pagemap, uint64_t virt, uint64_t flags) {
+    spinlock_acquire(&pagemap->lock);
     uint64_t *pte = vmm_virt_to_pte(pagemap, virt, false);
-    if (!pte || !(*pte & VMM_PRESENT)) return false;
-    *pte = (*pte & PAGE_ADDR_MASK) | flags;
+    if (!pte || !(*pte & VMM_PRESENT)) {
+        spinlock_release(&pagemap->lock);
+        return false;
+    }
+    *pte = (*pte & PAGE_ADDR_MASK) + flags;
     asm volatile("invlpg [%0]" :: "r"(virt) : "memory");
+    spinlock_release(&pagemap->lock);
     return true;
 }
 
@@ -109,6 +118,7 @@ void vmm_switch(struct pagemap *pagemap) {
 struct pagemap *vmm_new_pagemap(void) {
     struct pagemap *pagemap = kmalloc(sizeof(struct pagemap));
     if (!pagemap) return NULL;
+    pagemap->lock = (spinlock_t)SPINLOCK_INIT;
     pagemap->pml4 = pmm_allocz(1);
     if (!pagemap->pml4) {
         kfree(pagemap);
@@ -148,6 +158,7 @@ void vmm_init(struct limine_memmap_entry **entries, uint64_t entry_count) {
 
     kernel_pagemap = kmalloc(sizeof(struct pagemap));
     kernel_pagemap->pml4 = pmm_allocz(1);
+    kernel_pagemap->lock = (spinlock_t)SPINLOCK_INIT;
 
     uint64_t *pml4 = (uint64_t *)((uint64_t)kernel_pagemap->pml4 + MEM_OFFSET);
     for (int i = 256; i < 512; i++) {

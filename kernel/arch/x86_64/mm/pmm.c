@@ -19,11 +19,13 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <limine.h>
+#include <sync/spinlock.h>
 
 static uint8_t *bitmap;
 static size_t total_pages;
 static size_t free_pages;
 static size_t bitmap_size;
+static spinlock_t pmm_lock = SPINLOCK_INIT;
 
 static void bitmap_set(size_t page) {
     bitmap[page / 8] |= (1 << (page % 8));
@@ -105,13 +107,11 @@ static void *pmm_ialloc(size_t start_idx, size_t end_idx, size_t pages) {
 }
 
 void *pmm_alloc(size_t pages) {
+    spinlock_acquire(&pmm_lock);
     void *result = pmm_ialloc(last_index, total_pages, pages);
-    if (result) return result;
-
-    result = pmm_ialloc(0, last_index, pages);
-    if (result) return result;
-
-    return NULL;
+    if (!result) result = pmm_ialloc(0, last_index, pages);
+    spinlock_release(&pmm_lock);
+    return result;
 }
 
 void *pmm_allocz(size_t pages) {
@@ -124,11 +124,13 @@ void *pmm_allocz(size_t pages) {
 }
 
 void pmm_free(void *addr, size_t pages) {
+    spinlock_acquire(&pmm_lock);
     size_t start = (uint64_t)addr / PAGE_SIZE;
     for (size_t i = start; i < start + pages; i++) {
         bitmap_clear(i);
     }
     free_pages += pages;
+    spinlock_release(&pmm_lock);
 }
 
 size_t pmm_free_pages(void) {
