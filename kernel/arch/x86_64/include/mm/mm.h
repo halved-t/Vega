@@ -19,5 +19,7 @@
 
 #define PAGE_SIZE 4096
 extern uint64_t MEM_OFFSET;
+extern uint64_t KERNEL_V_ADDR;
+extern uint64_t KERNEL_P_ADDR;
 
 #endif
