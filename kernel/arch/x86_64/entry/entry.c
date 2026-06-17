@@ -112,8 +112,5 @@ void arch_entry(void) {
     framebuffer_clear();
 
     kprintf("Hello, Vega build %s!\n", GIT_VERSION);
-
-    kprintf("%zu free pages / %zu total (%zu MB free)\n", pmm_free_pages(), pmm_total_pages(), pmm_free_pages() * PAGE_SIZE / 1024 / 1024);
-
     hcf();
 }

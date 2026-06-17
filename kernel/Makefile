@@ -1,10 +1,9 @@
 ARCH := x86_64
 
-C_ARCH_FILES := $(wildcard arch/$(ARCH)/*/*.c)
-C_FILES      := $(wildcard */*.c)
+C_ARCH_FILES := $(wildcard arch/$(ARCH)/*/*.c) $(wildcard arch/$(ARCH)/fw/uACPI/source/*.c)
+C_FILES      := $(wildcard */*.c) fb/Flanterm/src/flanterm.c fb/Flanterm/src/flanterm_backends/fb.c
 ASM_FILES    := $(wildcard arch/$(ARCH)/*/*.asm)
 
-C_FILES += fb/Flanterm/src/flanterm.c fb/Flanterm/src/flanterm_backends/fb.c # Couldn't be assed to change the wildcards.
 
 OBJ         := $(C_ARCH_FILES:.c=.o) $(C_FILES:.c=.o) $(ASM_FILES:.asm=.o)
 HEADER_DEPS := $(C_ARCH_FILES:.c=.d) $(C_FILES:.c=.d)
@@ -21,9 +20,12 @@ ifeq ($(ARCH),x86_64)
         -Wall -Wextra -O2 -pipe \
         -I include/ \
         -I arch/$(ARCH)/include/ \
-        -I ../Limine/limine-protocol/include/
+        -I ../Limine/limine-protocol/include/ \
+        -I arch/$(ARCH)/fw/uACPI/include/
 
 	CFLAGS += -DGIT_VERSION=\"$(GIT_HASH)\"
+
+    CFLAGS += -DUACPI_BAREBONES_MODE -DUACPI_NATIVE_ALLOC_ZEROED # TODO: Implement the things that this requires.
 
     INTERNAL_CFLAGS := \
         -target $(TARGET) \
