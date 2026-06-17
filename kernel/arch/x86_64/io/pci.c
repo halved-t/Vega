@@ -67,10 +67,6 @@ static void legacy_write(uint16_t segment, uint8_t bus, uint8_t device, uint8_t 
     }
 }
 
-// Defaults in case someone somehow uses pci_read/write before pci_init
-IREAD = legacy_read;
-IWRITE = legacy_write;
-
 void pci_init(void) {
     // We don't have MCFG read/write so it always defaults to legacy.
     IREAD = legacy_read;
