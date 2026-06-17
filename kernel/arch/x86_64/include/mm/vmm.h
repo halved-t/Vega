@@ -20,6 +20,7 @@
 #include <stddef.h>
 #include <stdbool.h>
 #include <sync/spinlock.h>
+#include <limine.h>
 
 #define VMM_PRESENT (1ull << 0)
 #define VMM_WRITABLE (1ull << 1)
