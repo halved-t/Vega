@@ -27,6 +27,7 @@
 #include <mm/pmm.h>
 #include <mm/slab.h>
 #include <mm/vmm.h>
+#include <fw/acpi.h>
 
 __attribute__((used, section(".limine_requests")))
 static volatile uint64_t limine_base_revision[] = LIMINE_BASE_REVISION(6);
@@ -107,6 +108,8 @@ void arch_entry(void) {
     pmm_init(entries, entry_count);
     slab_init();
     vmm_init(entries, entry_count);
+
+    acpi_init();
 
     framebuffer_init(&framebuf);
     framebuffer_clear();

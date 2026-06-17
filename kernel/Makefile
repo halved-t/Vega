@@ -1,6 +1,6 @@
 ARCH := x86_64
 
-C_ARCH_FILES := $(wildcard arch/$(ARCH)/*/*.c) $(wildcard arch/$(ARCH)/fw/uACPI/source/*.c)
+C_ARCH_FILES := $(wildcard arch/$(ARCH)/*/*.c) $(wildcard arch/$(ARCH)/fw/uACPI/source/*/*.c)
 C_FILES      := $(wildcard */*.c) fb/Flanterm/src/flanterm.c fb/Flanterm/src/flanterm_backends/fb.c
 ASM_FILES    := $(wildcard arch/$(ARCH)/*/*.asm)
 
