@@ -22,11 +22,10 @@
 #include <debug/debug.h>
 
 void acpi_init(void) {
-    /*uacpi_status ret = uacpi_initialize(0);
+    uacpi_status ret = uacpi_initialize(0);
     if (uacpi_unlikely_error(ret))
         for (;;) {
             kprintf("[uACPI] [ERROR OH FUCK]: %s", uacpi_status_to_string(ret));
             asm("hlt");
         }
-    */
 }

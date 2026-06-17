@@ -28,6 +28,7 @@
 #include <mm/slab.h>
 #include <mm/vmm.h>
 #include <fw/acpi.h>
+#include <io/pci.h>
 
 __attribute__((used, section(".limine_requests")))
 static volatile uint64_t limine_base_revision[] = LIMINE_BASE_REVISION(6);
@@ -70,6 +71,23 @@ static void hcf(void) {
     }
 }
 
+static inline void draw_funny(void* addr, uint64_t width, uint64_t height, uint64_t pitch) {
+    for (uint32_t y = 0; y < height; y++) {
+        uint32_t *row = (uint32_t *)((uint8_t *)addr + y * pitch);
+        uint32_t idx = y * 6 / height;
+        uint32_t color;
+
+        if (idx == 0) color = 0x00E40303;
+        else if (idx == 1) color = 0x00FF8C00;
+        else if (idx == 2) color = 0x00FFED00;
+        else if (idx == 3) color = 0x0000C800;
+        else if (idx == 4) color = 0x000043FF;
+        else color = 0x0082007F;
+
+        for (uint32_t x = 0; x < width; x++) row[x] = color;
+    }
+}
+
 void arch_entry(void) {
     if (LIMINE_BASE_REVISION_SUPPORTED(limine_base_revision) == false) hcf();
     if (framebuffer_request.response == NULL || framebuffer_request.response->framebuffer_count < 1) hcf();
@@ -96,6 +114,9 @@ void arch_entry(void) {
         .blue_mask_shift = framebuffer->blue_mask_shift
     };
 
+    // pride month special
+    draw_funny(framebuf.address, framebuf.width, framebuf.height, framebuf.pitch);
+
     serial_init();
     serial_puts("\n\n\n"); // Stupid hack to get out of the EDK2 messages' way.
 
@@ -110,6 +131,7 @@ void arch_entry(void) {
     vmm_init(entries, entry_count);
 
     acpi_init();
+    pci_init();
 
     framebuffer_init(&framebuf);
     framebuffer_clear();
