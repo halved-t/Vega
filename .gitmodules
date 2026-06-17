@@ -4,3 +4,6 @@
 [submodule "kernel/fb/Flanterm"]
 	path = kernel/fb/Flanterm
 	url = https://github.com/Mintsuki/Flanterm
+[submodule "kernel/arch/x86_64/fw/uACPI"]
+	path = kernel/arch/x86_64/fw/uACPI
+	url = https://github.com/uACPI/uACPI

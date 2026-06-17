@@ -9,7 +9,7 @@ C_FILES += fb/Flanterm/src/flanterm.c fb/Flanterm/src/flanterm_backends/fb.c # C
 OBJ         := $(C_ARCH_FILES:.c=.o) $(C_FILES:.c=.o) $(ASM_FILES:.asm=.o)
 HEADER_DEPS := $(C_ARCH_FILES:.c=.d) $(C_FILES:.c=.d)
 
-GIT_HASH := $(shell git rev-parse HEAD 2>/dev/null | cut -c 1-8 || echo unknown)
+GIT_HASH := $(shell [ -n "$$(git status --porcelain 2>/dev/null)" ] && echo "dev" || git rev-parse --short=8 HEAD 2>/dev/null || echo "unknown")
 
 ifeq ($(ARCH),x86_64)
     CC     := clang
