@@ -6,10 +6,8 @@ DISK  := disk.hdd
 
 all: $(DISK)
 
-kernel/Vega.elf:
+kernel:
 	$(MAKE) -C kernel
-
-kernel: kernel/Vega.elf
 .PHONY: kernel
 
 Limine/GNUmakefile:
@@ -18,7 +16,7 @@ Limine/GNUmakefile:
 Limine/bin/BOOTX64.EFI: Limine/GNUmakefile
 	$(MAKE) -C Limine
 
-$(DISK): kernel/Vega.elf Limine/bin/BOOTX64.EFI limine.conf
+$(DISK): kernel Limine/bin/BOOTX64.EFI limine.conf
 	dd if=/dev/zero bs=1M count=0 seek=64 of=$(DISK)
 	parted -s $(DISK) mklabel gpt
 	parted -s $(DISK) mkpart ESP fat32 2048s 100%
