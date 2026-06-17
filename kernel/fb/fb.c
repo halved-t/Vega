@@ -18,14 +18,21 @@
 #include "Flanterm/src/flanterm_backends/fb.h"
 #include <limine.h>
 #include <klibc/string.h>
+#include <mm/slab.h>
+#define FLANTERM_FB_DISABLE_BUMP_ALLOC
 
 struct flanterm_context *ft_ctx;
 uint8_t initialised = 0;
 
+static void ft_free(void *addr, size_t sz) {
+    (void)sz;
+    kfree(addr);
+}
+
 void framebuffer_init(struct framebuffer *fb) {
     ft_ctx = flanterm_fb_init(
-        NULL,
-        NULL,
+        kmalloc,
+        ft_free,
         fb->address, fb->width, fb->height, fb->pitch,
         fb->red_mask_size, fb->red_mask_shift,
         fb->green_mask_size, fb->green_mask_shift,
