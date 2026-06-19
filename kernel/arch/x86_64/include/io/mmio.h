@@ -17,14 +17,14 @@
 
 #include <stdint.h>
 
-static inline void outmmb(void *addr, uint8_t val) { asm volatile("mov byte ptr [%0], %1" :: "r"(addr), "r"(val) : "memory"); }
-static inline void outmmw(void *addr, uint16_t val) { asm volatile("mov word ptr [%0], %1" :: "r"(addr), "r"(val) : "memory"); }
-static inline void outmmd(void *addr, uint32_t val) { asm volatile("mov dword ptr [%0], %1" :: "r"(addr), "r"(val) : "memory"); }
-static inline void outmmq(void *addr, uint64_t val) { asm volatile("mov qword ptr [%0], %1" :: "r"(addr), "r"(val) : "memory"); }
+static inline void outmmb(void *addr, uint8_t val) { *(volatile uint8_t *)(addr) = val; }
+static inline void outmmw(void *addr, uint16_t val) { *(volatile uint16_t *)(addr) = val; }
+static inline void outmmd(void *addr, uint32_t val) { *(volatile uint32_t *)(addr) = val; }
+static inline void outmmq(void *addr, uint64_t val) { *(volatile uint64_t *)(addr) = val; }
 
-static inline uint8_t inmmb(void *addr) { uint8_t val; asm volatile("mov %0, byte ptr [%1]" : "=r"(val) : "r"(addr) : "memory"); return val; }
-static inline uint16_t inmmw(void *addr) { uint16_t val; asm volatile("mov %0, word ptr [%1]" : "=r"(val) : "r"(addr) : "memory"); return val; }
-static inline uint32_t inmmd(void *addr) { uint32_t val; asm volatile("mov %0, dword ptr [%1]" : "=r"(val) : "r"(addr) : "memory"); return val; }
-static inline uint64_t inmmq(void *addr) { uint64_t val; asm volatile("mov %0, qword ptr [%1]" : "=r"(val) : "r"(addr) : "memory"); return val; }
+static inline uint8_t inmmb(void *addr) { return *(volatile uint8_t *)(addr); }
+static inline uint16_t inmmw(void *addr) { return *(volatile uint16_t *)(addr); }
+static inline uint32_t inmmd(void *addr) { return *(volatile uint32_t *)(addr); }
+static inline uint64_t inmmq(void *addr) { return *(volatile uint64_t *)(addr); }
 
 #endif
