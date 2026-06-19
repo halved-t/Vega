@@ -41,7 +41,7 @@ void madt_init(void) {
         for (;;) asm volatile("hlt");
     }
 
-    madt = (struct acpi_madt *)table.virt_addr;
+    madt = (struct acpi_madt *)table.ptr;
     lapic_addr = madt->local_interrupt_controller_address;
     
     uint8_t *entry = (uint8_t *)(madt + 1);
@@ -101,6 +101,8 @@ void madt_init(void) {
 
         entry += length;
     }
+
+    uacpi_table_unref(&table);
 }
 
 struct acpi_madt_interrupt_source_override *madt_get_isos(size_t *count) {
