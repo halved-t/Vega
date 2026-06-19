@@ -1,3 +1,5 @@
+#ifndef MADT_H
+#define MADT_H
 /*
  * Copyright 2026 Halved
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,25 +15,18 @@
  * limitations under the License.
  */
 
-#include <fw/acpi.h>
-#include <fw/madt.h>
-#include <io/pci.h>
-#include <uacpi/uacpi.h>
-#include <uacpi/utilities.h>
-#include <uacpi/tables.h>
-#include <uacpi/status.h>
-#include <uacpi/event.h>
-#include <debug/debug.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <uacpi/acpi.h>
 
-void acpi_init(void) {
-    uacpi_status ret = uacpi_initialize(0);
-    if (uacpi_unlikely_error(ret)) {
-        for (;;) {
-            kprintf("[uACPI] [ERROR OH FUCK]: %s", uacpi_status_to_string(ret));
-            asm("hlt");
-        }
-    }
+void madt_init(void);
 
-    pci_init();
-    madt_init();
-}
+uint64_t madt_get_lapic_addr(void);
+uint8_t *madt_get_lapic_ids(void);
+uint64_t madt_get_ioapic_addr(void);
+uint8_t madt_get_ioapic_id(void);
+uint32_t madt_get_ioapic_gsi(void);
+size_t madt_get_cpu_count(void);
+struct acpi_madt_interrupt_source_override *madt_get_isos(size_t *count);
+
+#endif

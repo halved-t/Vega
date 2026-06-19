@@ -292,7 +292,7 @@ uacpi_status uacpi_kernel_acquire_mutex(uacpi_handle handle, uacpi_u16 timeout) 
     // FIXME: stub
     (void)handle;
     (void)timeout;
-    return UACPI_STATUS_UNIMPLEMENTED;
+    return UACPI_STATUS_OK;
 }
 
 void uacpi_kernel_release_mutex(uacpi_handle handle) {
