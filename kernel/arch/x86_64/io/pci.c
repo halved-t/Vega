@@ -19,15 +19,36 @@
 #include <mm/vmm.h>
 #include <mm/mm.h>
 #include <debug/debug.h>
+#include <uacpi/tables.h>
+#include <uacpi/acpi.h>
+#include <uacpi/uacpi.h>
 
 #define LEGACY_PCI_ADDR 0xCF8
 #define LEGACY_PCI_DATA 0xCFC
+#define MAX_MCFG_ALLOCATIONS 16
+static struct acpi_mcfg *mcfg = NULL;
+static size_t mcfg_alloc_count = 0;
+static struct acpi_mcfg_allocation mcfg_allocs[MAX_MCFG_ALLOCATIONS];
 
 static uint32_t (*IREAD)(uint16_t, uint8_t, uint8_t, uint8_t, uint16_t, uint8_t);
 static void (*IWRITE)(uint16_t, uint8_t, uint8_t, uint8_t, uint16_t, uint32_t, uint8_t);
 
 static uint32_t pci_make_addr(uint16_t bus, uint8_t device, uint32_t function, uint16_t offset) {
     return (1u << 31) | ((uint32_t)bus << 16) | ((uint32_t)device << 11) | ((uint32_t)function << 8) | (offset & 0xFC);
+}
+
+static uint64_t mcfg_make_addr(uint16_t segment, uint8_t bus, uint8_t device, uint8_t function, uint16_t offset) {
+    for (size_t i = 0; i < mcfg_alloc_count; i++) {
+        struct acpi_mcfg_allocation *alloc = &mcfg_allocs[i];
+
+        if (alloc->segment == segment && bus >= alloc->start_bus && bus <= alloc->end_bus) {
+            uint64_t phys_offset = ((uint64_t)(bus - alloc->start_bus) << 20) | ((uint64_t)device << 15) | ((uint64_t)function << 12) | offset;
+
+            return alloc->address + phys_offset + MEM_OFFSET;
+        }
+    }
+
+    return 0;
 }
 
 static uint32_t legacy_read(uint16_t segment, uint8_t bus, uint8_t device, uint8_t function, uint16_t offset, uint8_t size) {
@@ -67,10 +88,75 @@ static void legacy_write(uint16_t segment, uint8_t bus, uint8_t device, uint8_t 
     }
 }
 
+static uint32_t mcfg_read(uint16_t segment, uint8_t bus, uint8_t device, uint8_t function, uint16_t offset, uint8_t size) {
+    uint64_t addr = mcfg_make_addr(segment, bus, device, function, offset);
+    if (addr == 0) goto fail;
+
+    switch (size) {
+        case 1:
+            return inmmb((void*)addr);
+        case 2:
+            return inmmw((void*)addr);
+        case 4:
+            return inmmd((void*)addr);
+        default:
+            goto fail;
+    };
+
+    fail:
+        return 0;
+}
+
+static void mcfg_write(uint16_t segment, uint8_t bus, uint8_t device, uint8_t function, uint16_t offset, uint32_t value, uint8_t size) {
+    uint64_t addr = mcfg_make_addr(segment, bus, device, function, offset);
+    if (addr == 0) return;
+
+    switch (size) {
+        case 1:
+            outmmb((void*)addr, value);
+            break;
+        case 2:
+            outmmw((void*)addr, value);
+            break;
+        case 4:
+            outmmd((void*)addr, value);
+            break;
+        default:
+            break;
+    };
+}
+
 void pci_init(void) {
-    // We don't have MCFG read/write so it always defaults to legacy.
-    IREAD = legacy_read;
-    IWRITE = legacy_write;
+    uacpi_table table;
+    uacpi_status ret = uacpi_table_find_by_signature(ACPI_MCFG_SIGNATURE, &table);
+
+    if (uacpi_unlikely_error(ret)) {
+        kprintf("[PCI]: Falling back to legacy.\n");
+        IREAD = legacy_read;
+        IWRITE = legacy_write;
+        return;
+    }
+
+    mcfg = (struct acpi_mcfg *)table.ptr;
+
+    uint8_t *entry = (uint8_t *)(mcfg + 1);
+    uint8_t *end = (uint8_t *)mcfg + mcfg->hdr.length;  
+
+    while (entry < end) {
+        struct acpi_mcfg_allocation *alloc = (struct acpi_mcfg_allocation *)entry;
+
+        if (mcfg_alloc_count < MAX_MCFG_ALLOCATIONS) {
+            mcfg_allocs[mcfg_alloc_count++] = *alloc;
+        }
+
+        entry += sizeof(struct acpi_mcfg_allocation);
+    }
+
+    kprintf("[PCI]: Using MCFG.\n");
+    IREAD = mcfg_read;
+    IWRITE = mcfg_write;
+
+    uacpi_table_unref(&table);
 }
 
 uint8_t pci_read8(uint16_t segment, uint8_t bus, uint8_t device, uint8_t function, uint16_t offset) {
